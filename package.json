@@ -2,8 +2,12 @@
   "name": "zenobreezy",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "dev": "node api/careers.js"
+  },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.12",
-    "webflow-api": "^4.0.0"
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "webflow-api": "^3.1.0"
   }
 }
