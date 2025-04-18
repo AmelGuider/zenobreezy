@@ -3,6 +3,7 @@ import * as cheerio from "cheerio";
 
 const client = new WebflowClient({ accessToken: process.env.WEBFLOW_API_KEY });
 
+// 1. SCRAPE les offres Breezy
 async function scrapeJobs() {
   const response = await fetch("https://zeno-power.breezy.hr/");
   const html = await response.text();
@@ -36,21 +37,24 @@ async function scrapeJobs() {
   return jobs;
 }
 
+// 2. Récupère les items Webflow déjà publiés
 async function getOpenings() {
-  const openings = await client.collections.items.listItemsLive("6759f13cf5a3cb939909a780");
+  const openings = await client.collections.items.listItemsLive("67dc46532575e8231ca7988c");
   return openings;
 }
 
+// 3. Identifie les nouveautés et les suppressions
 function matchJobsToOpenings(jobs, openings) {
   const newJobs = jobs.filter(job => !openings.some(opening => opening.fieldData.slug === job.slug));
   const jobsToRemove = openings.filter(opening => !jobs.some(job => job.slug === opening.fieldData.slug));
   return { newJobs, jobsToRemove };
 }
 
+// 4. Structure format CMS
 function formatJob(job) {
   return {
     id: job.slug,
-    cmsLocaleId: "6759f13adb2adfac650b7ee0",
+    cmsLocaleId: "6759f13adb2adfac650b7ee0", // garde ce champ si Webflow Locales sont utilisés
     fieldData: {
       name: job.title,
       slug: job.slug,
@@ -62,12 +66,14 @@ function formatJob(job) {
   };
 }
 
+// 5. Ajoute les nouvelles offres
 async function addJobs(jobs) {
-  return await client.collections.items.createItemLive("6759f13cf5a3cb939909a780", {
+  return await client.collections.items.createItemLive("67dc46532575e8231ca7988c", {
     items: jobs.map(formatJob),
   });
 }
 
+// 6. Supprime les anciennes offres
 async function removeJobs(jobs) {
   const results = await Promise.all(
     jobs.map(job =>
@@ -77,6 +83,7 @@ async function removeJobs(jobs) {
   return results;
 }
 
+// 7. ROUTE GET
 export async function GET() {
   try {
     const [jobs, { items: openings }] = await Promise.all([scrapeJobs(), getOpenings()]);
